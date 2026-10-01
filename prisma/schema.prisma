@@ -1,0 +1,75 @@
+// Prisma schema for optional persistent PostgreSQL backend (Supabase / Neon / Self-hosted)
+// SENTINELX functions completely without this database in free serverless deployments.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  scans     Scan[]
+}
+
+model Scan {
+  id              String            @id @default(cuid())
+  url             String
+  normalizedUrl   String
+  verdict         String
+  riskScore       Int
+  confidenceScore Int
+  summary         String?
+  fullReport      Json?
+  createdAt       DateTime          @default(now())
+  userId          String?
+  user            User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signals         DetectionSignal[]
+
+  @@index([url])
+  @@index([verdict])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model DetectionSignal {
+  id          String   @id @default(cuid())
+  scanId      String
+  scan        Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  signalId    String
+  title       String
+  explanation String
+  severity    String
+  status      String
+  source      String
+  points      Int
+  createdAt   DateTime @default(now())
+
+  @@index([scanId])
+}
+
+model SecurityLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  actor     String
+  action    String
+  target    String
+  status    String
+  details   String?
+
+  @@index([timestamp])
+  @@index([actor])
+}
