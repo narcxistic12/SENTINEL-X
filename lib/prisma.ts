@@ -1,15 +1,27 @@
 import { PrismaClient } from '@prisma/client';
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
-};
-
 declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
+  var prismaGlobal: PrismaClient | undefined;
 }
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+function getPrismaClient(): PrismaClient {
+  if (!globalThis.prismaGlobal) {
+    globalThis.prismaGlobal = new PrismaClient();
+  }
+  return globalThis.prismaGlobal;
+}
+
+// Proxy wrapper so PrismaClient is ONLY instantiated when a query property is actually accessed at runtime
+const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop: keyof PrismaClient) {
+    const client = getPrismaClient();
+    const value = client[prop];
+    if (typeof value === 'function') {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
 
 export default prisma;
 
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma;

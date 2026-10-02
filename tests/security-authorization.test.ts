@@ -27,4 +27,32 @@ describe('SENTINELX Authorization & Security Tests', () => {
     expect(user).not.toBeNull();
     expect(user?.role).toBe('ADMIN');
   });
+
+  it('/api/admin/stats blocks unauthenticated requests with 403', async () => {
+    const { GET } = await import('../app/api/admin/stats/route');
+    const req = new NextRequest('http://localhost:3000/api/admin/stats');
+    const res = await GET(req);
+    expect(res.status).toBe(403);
+  });
+
+  it('/api/admin/stats blocks USER role requests with 403', async () => {
+    const { GET } = await import('../app/api/admin/stats/route');
+    const req = new NextRequest('http://localhost:3000/api/admin/stats', {
+      headers: { Authorization: 'Bearer sess_user_charlie' },
+    });
+    const res = await GET(req);
+    expect(res.status).toBe(403);
+  });
+
+  it('/api/admin/stats allows ADMIN role requests', async () => {
+    const { GET } = await import('../app/api/admin/stats/route');
+    const req = new NextRequest('http://localhost:3000/api/admin/stats', {
+      headers: { Authorization: 'Bearer sess_admin_root' },
+    });
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.systemStatus).toBeDefined();
+  });
 });
+
