@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     'SSRF protection',
   ],
   authors: [{ name: 'SENTINELX Security Team' }],
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   viewport: 'width=device-width, initial-scale=1',
 };
 
